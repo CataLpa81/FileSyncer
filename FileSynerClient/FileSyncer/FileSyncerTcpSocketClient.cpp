@@ -39,7 +39,6 @@ void FileSyncerTcpSocketClient::OnReadReady()
 	}
 }
 
-
 void FileSyncerTcpSocketClient::ProcessFileHead()
 {
 	this->UpdateFileReceiveProgress();
@@ -116,5 +115,7 @@ void FileSyncerTcpSocketClient::SendRefreshRequest()
 	write(outBuffer);
 	flush();
 }
+
+
 
 

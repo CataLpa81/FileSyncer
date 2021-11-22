@@ -16,13 +16,17 @@ namespace FileSyncerSystem
         void Start();
         void StartClient();
     public slots:
+        void OnTcpClientConnected();
+        void OnTcpClientDisConnected();
+
         void OnBtnSelectClick();
         void OnBtnSelectLocalClick();
         void OnBtnUploadClick();
         void OnBtnDownloadClick();
         void OnBtnRefreshClick();
         void OnBtnDownloadAllClick();
-        void OnBtnDelete();
+        void OnBtnDeleteClick();
+        void OnBtnConnectedClick();
 
         void OnFileBytesWritten(FileSyncerTcpSocket*);
         void OnFileBytesReceived(FileSyncerTcpSocket*);
@@ -31,7 +35,13 @@ namespace FileSyncerSystem
     private:
         void virtual dragEnterEvent(QDragEnterEvent* event);
         void virtual dropEvent(QDropEvent* event);
+        void virtual dragMoveEvent(QDragMoveEvent* event);
 
+        void virtual mousePressEvent(QMouseEvent* event);
+        void virtual mouseMoveEvent(QMouseEvent* event);
+        void virtual mouseReleaseEvent(QMouseEvent* event);
+
+        void OnDragFileOut();
         void UpdateFileSendProgress();
         void UpdateFileReceiveProgress();
         void AnalyzeJson();
@@ -45,5 +55,8 @@ namespace FileSyncerSystem
 
         QString m_ip;
         qint16 m_port;
+        QString m_DefaultSavePath;
+
+        QPoint start_pos;
     };
 }

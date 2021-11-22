@@ -75,6 +75,7 @@ void FileSyncerTcpSocket::sendFile()
 void FileSyncerTcpSocket::onConnected()
 {
 	Log::Info("connect successfully");
+	
 }
 
 void FileSyncerTcpSocket::UpdateFileSendProgress()

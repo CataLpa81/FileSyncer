@@ -28,7 +28,7 @@ namespace FileSyncerSystem
 		void FileBytesWritten(FileSyncerTcpSocket*);
 		void FileBytesReceived(FileSyncerTcpSocket*);
 	private slots:
-		void onConnected();
+		virtual void onConnected();
 	public slots:
 		void UpdateFileSendProgress();
 		void UpdateFileReceiveProgress();

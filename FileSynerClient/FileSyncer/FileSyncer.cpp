@@ -27,6 +27,8 @@ void FileSyncer::Start()
     ui.progressBar->setMaximum(10);
     ui.progressBar->setValue(0);
     ui.lineEdit_LocalFilePath->setEnabled(false);
+    ui.label_connectState->setText("disconnected");
+    ui.btn_connect->setEnabled(true);
     this->setAcceptDrops(true);
     StartClient();
 }
@@ -49,6 +51,12 @@ void FileSyncer::AnalyzeJson()
 
     m_ip = jsonObject["ipAddress"].toString();
     m_port = jsonObject["port"].toInt();
+    m_DefaultSavePath = jsonObject["defaultSavePath"].toString();
+    if (m_ip == NULL || m_port == NULL)
+    {
+        QMessageBox::about(NULL, QStringLiteral("ÌáÊ¾"), QStringLiteral("JSON½âÎöÊ§°Ü£¡"));
+        exit(0);
+    }
     
 }
 
@@ -56,19 +64,27 @@ void FileSyncer::StartClient()
 {
     m_Client = new FileSyncerClient();
     m_Client->setTargetAddress(m_ip, m_port);
-    m_Client->doConnect();
+    connect(m_Client->tcpClient, SIGNAL(connected()), this, SLOT(OnTcpClientConnected()));
+    connect(m_Client->tcpClient, SIGNAL(disconnected()), this, SLOT(OnTcpClientDisConnected()));
     connect(ui.btn_upload, SIGNAL(clicked()), this, SLOT(OnBtnUploadClick()));
     connect(ui.btn_download, SIGNAL(clicked()), this, SLOT(OnBtnDownloadClick()));
     connect(ui.btn_downloadall, SIGNAL(clicked()), this, SLOT(OnBtnDownloadAllClick()));
     connect(ui.btn_select, SIGNAL(clicked()), this, SLOT(OnBtnSelectClick()));
     connect(ui.btn_selectLocal, SIGNAL(clicked()), this, SLOT(OnBtnSelectLocalClick()));
     connect(ui.btn_refresh, SIGNAL(clicked()), this, SLOT(OnBtnRefreshClick()));
-    connect(ui.btn_delete, SIGNAL(clicked()), this, SLOT(OnBtnDelete()));
+    connect(ui.btn_delete, SIGNAL(clicked()), this, SLOT(OnBtnDeleteClick()));
+    connect(ui.btn_connect, SIGNAL(clicked()), this, SLOT(OnBtnConnectedClick()));
+
 
     connect(m_Client->tcpClient, SIGNAL(FileBytesWritten(FileSyncerTcpSocket*)), this, SLOT(OnFileBytesWritten(FileSyncerTcpSocket*)));
     connect(m_Client->tcpClient, SIGNAL(FileBytesReceived(FileSyncerTcpSocket*)), this, SLOT(OnFileBytesReceived(FileSyncerTcpSocket*)));
 
     connect(m_Client->tcpClient, SIGNAL(FileListReady(QList<FileInfo>)), this, SLOT(OnFileListReady(QList<FileInfo>)));
+
+
+    m_Client->doConnect();
+
+
 }
 
 FileSyncer* FileSyncer::getInstance()
@@ -78,6 +94,20 @@ FileSyncer* FileSyncer::getInstance()
     return m_Instance;
 }
 
+void FileSyncer::OnTcpClientConnected()
+{
+    ui.label_connectState->setText("connected");
+    ui.btn_connect->setEnabled(false);
+    ui.lineEdit_LocalFilePath->setText(m_DefaultSavePath);
+    m_Client->SetFileSavePath(m_DefaultSavePath);
+    OnBtnRefreshClick();
+}
+
+void FileSyncer::OnTcpClientDisConnected()
+{
+    ui.label_connectState->setText("disconnected");
+    ui.btn_connect->setEnabled(true);
+}
 
 void FileSyncer::OnBtnSelectClick()
 {
@@ -95,6 +125,8 @@ void FileSyncer::OnBtnSelectLocalClick()
     ui.lineEdit_LocalFilePath->setText(path);
     m_Client->SetFileSavePath(path);
 }
+
+
 void FileSyncer::OnBtnUploadClick()
 {
     QString path = ui.lineEdit_FilePath->text();
@@ -108,6 +140,8 @@ void FileSyncer::OnBtnUploadClick()
     }
     m_Client->doSyncSingleFile(path);
 }
+
+
 void FileSyncer::OnBtnDownloadClick()
 {
     Log::Info("OnBtnDownloadClick");
@@ -140,9 +174,15 @@ void FileSyncer::OnBtnRefreshClick()
 
 }
 
-void FileSyncer::OnBtnDelete()
+void FileSyncer::OnBtnConnectedClick()
 {
-    Log::Info("OnBtnDelete");
+    Log::Info("OnBtnConnectedClick");
+    m_Client->doConnect();
+}
+
+void FileSyncer::OnBtnDeleteClick()
+{
+    Log::Info("OnBtnDeleteClick");
 
     QString targetFileName = GetCurSelectFileName();
     if (targetFileName == NULL)
@@ -231,6 +271,43 @@ void FileSyncer::OnFileListReady(QList<FileInfo> _fileList)
     ui.listView_OnlineFiles->setModel(m_FileListModel);
 }
 
+void FileSyncer::dragMoveEvent(QDragMoveEvent* event)
+{
+
+}
+
+void FileSyncer::mousePressEvent(QMouseEvent* event)
+{
+    if (event->button() == Qt::LeftButton)
+    {
+        start_pos = event->pos();
+
+    }
+}
+
+void FileSyncer::mouseMoveEvent(QMouseEvent* event)
+{
+    if (event->buttons() & Qt::LeftButton) {
+        int distance = (event->pos() - start_pos).manhattanLength();
+        if (distance >= QApplication::startDragDistance())
+        {
+            /* Drag */
+            QMimeData* mime_data = new QMimeData;
+
+            mime_data->setData("text/uri-list", "");
+
+            QDrag* drag = new QDrag(this);
+            drag->setMimeData(mime_data);
+            drag->exec(Qt::CopyAction);
+        }
+    }
+}
+
+void FileSyncer::mouseReleaseEvent(QMouseEvent* event)
+{
+
+}
+
 
 void FileSyncer::dragEnterEvent(QDragEnterEvent* event)
 {
@@ -244,3 +321,8 @@ void FileSyncer::dropEvent(QDropEvent* event)
     ui.lineEdit_FilePath->setText(path);
 }
 
+void FileSyncer::OnDragFileOut()
+{
+    QString filename = GetCurSelectFileName();
+    QMimeData* mimeData = new QMimeData();
+}

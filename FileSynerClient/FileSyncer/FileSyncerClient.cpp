@@ -37,7 +37,10 @@ void FileSyncerClient::doConnect()
 	{
 		Log::Info("Tcp connnect overTime");
 		QMessageBox::about(NULL, QStringLiteral("提示"), QStringLiteral("服务器连接失败"));
+		return;
 	}
+
+
 }
 
 void FileSyncerClient::doConnect(QString ip, qint16 port)
